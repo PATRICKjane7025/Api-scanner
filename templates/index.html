@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>API Vulnerability Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<div class="container">
+    <!-- Header Section -->
+    <header>
+        <h1>API Vulnerability Scanner</h1>
+    </header>
+
+    <!-- Form Section -->
+    <form id="scan-form">
+        <label for="api_url">Enter  URL:</label>
+        <input type="text" id="api_url" name="api_url" placeholder="Domain.com" required>
+        <input type="submit" value="Scan API">
+    </form>
+
+    <!-- Futuristic Loader Bar -->
+    <div class="loader-container" id="loader-container">
+        <div class="loader-bar" id="loader-bar"></div>
+    </div>
+
+    <!-- Result Section -->
+    <div class="result-container" id="scan-result" style="display:none;">
+        <h2>API Detection Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>API Type</th>
+                    <th>Endpoints</th>
+                </tr>
+            </thead>
+            <tbody id="api-detection-body">
+                <!-- API Detection results go here -->
+            </tbody>
+        </table>
+
+        <h2>Detailed Vulnerability Scan</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Vulnerability Type</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody id="detailed-scan-body">
+                <!-- Detailed vulnerability scan results go here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Footer Section -->
+<footer>
+    <p>&copy; 2024 SecurityLabz. All rights reserved.</p>
+</footer>
+
+<script>
+    document.getElementById('scan-form').onsubmit = async function (e) {
+        e.preventDefault();
+        
+        const submitButton = e.target.querySelector('input[type="submit"]');
+        const loaderContainer = document.getElementById('loader-container');
+        const loaderBar = document.getElementById('loader-bar');
+        
+        submitButton.classList.add('loading'); // Change button appearance
+        submitButton.value = "Scanning..."; // Update button text
+        loaderContainer.style.display = 'block'; // Show the loader
+        
+        try {
+            const apiUrl = document.getElementById('api_url').value;
+            const resultContainer = document.getElementById('scan-result');
+            const apiDetectionTable = document.getElementById('api-detection-body');
+            const detailedScanTable = document.getElementById('detailed-scan-body');
+
+            // Clear previous results
+            apiDetectionTable.innerHTML = '';
+            detailedScanTable.innerHTML = '';
+
+            const response = await fetch('/scan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({ api_url: apiUrl })
+            });
+
+            const result = await response.json();
+
+            // Populate API Detection Table
+            const apiDetection = result["API Detection"];
+            Object.keys(apiDetection).forEach(apiType => {
+                const endpoints = apiDetection[apiType].length > 0 ? apiDetection[apiType].join(', ') : 'None';
+                const row = `<tr><td>${apiType}</td><td>${endpoints}</td></tr>`;
+                apiDetectionTable.innerHTML += row;
+            });
+
+            // Populate Detailed Vulnerability Scan Table
+            const detailedScan = result["Detailed Scan"];
+            Object.keys(detailedScan).forEach(vulnType => {
+                const details = detailedScan[vulnType];
+                const row = `<tr><td>${vulnType}</td><td>${details}</td></tr>`;
+                detailedScanTable.innerHTML += row;
+            });
+
+            resultContainer.style.display = 'block';
+        } catch (err) {
+            console.error('Error during scan:', err);
+        } finally {
+            submitButton.classList.remove('loading'); // Reset button state
+            submitButton.value = "Scan API"; // Reset button text
+            loaderContainer.style.display = 'none'; // Hide loader
+        }
+    };
+</script>
+
+</body>
+</html>
